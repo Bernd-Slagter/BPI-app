@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'job_list' %}">Jobs</a><span>›</span>{{ job.title }}</nav>
+<h1>{{ job.title }}</h1>
+<div class="card">
+    <div class="actions" style="margin-top:0;margin-bottom:1rem;">
+        <a href="{% url 'job_edit' job.pk %}" class="btn">Edit</a>
+        <a href="{% url 'job_delete' job.pk %}" class="btn btn-secondary">Delete</a>
+        <a href="{% url 'application_create' %}?job={{ job.pk }}" class="btn btn-secondary">Add application</a>
+    </div>
+    <p><strong>Department:</strong> {{ job.department|default:"—" }}</p>
+    <p><strong>Location:</strong> {{ job.location|default:"—" }}</p>
+    <p><strong>Status:</strong> {{ job.get_status_display }}</p>
+    {% if job.description %}
+    <p><strong>Description:</strong><br>{{ job.description|linebreaks }}</p>
+    {% endif %}
+    <p class="muted">Created {{ job.created_at|date:"M j, Y" }}</p>
+</div>
+<h2 style="font-size:1.1rem;">Pipeline – applicants by stage</h2>
+<div class="card" style="padding:0.75rem;overflow-x:auto;">
+    <div class="pipeline">
+        {% for stage_key, stage_label, apps in pipeline_columns %}
+        <div class="pipeline-cell {% if stage_key == 'rejected' or stage_key == 'withdrawn' %}outcome-cell{% endif %}">
+            <div class="pipeline-connector">
+                <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <line x1="0" y1="12" x2="14" y2="12" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M14 6l6 6-6 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="pipeline-column {% if stage_key == 'rejected' or stage_key == 'withdrawn' %}outcome{% endif %}">
+                <h3>{{ stage_label }}</h3>
+                {% for app in apps %}
+                <div class="pipeline-card">
+                    <a href="{% url 'application_edit' app.pk %}">{{ app.candidate }}</a>
+                    <div class="muted">{{ app.applied_at|date:"M j" }}</div>
+                </div>
+                {% empty %}
+                <span class="muted" style="font-size:0.85rem;">—</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<h2 style="font-size:1.1rem;">Applications ({{ job.applications.count }})</h2>
+{% if job.applications.all %}
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Candidate</th><th scope="col">Status</th><th scope="col">Applied</th><th scope="col"></th></tr>
+        </thead>
+        <tbody>
+            {% for app in job.applications.all %}
+            <tr>
+                <td>{{ app.candidate }} <span class="muted">({{ app.candidate.email }})</span></td>
+                <td>{{ app.get_status_display }}</td>
+                <td class="muted">{{ app.applied_at|date:"M j, Y" }}</td>
+                <td><a href="{% url 'application_edit' app.pk %}">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="muted">No applications for this job yet.</p>
+{% endif %}
+<p><a href="{% url 'job_list' %}">← Back to jobs</a></p>
+{% endblock %}

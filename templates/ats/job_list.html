@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<h1>Jobs</h1>
+<p class="actions"><a href="{% url 'job_create' %}" class="btn">Add job</a></p>
+<p class="muted">
+    Filter: <a href="?status=open" {% if status_filter == 'open' %}style="font-weight:bold"{% endif %}>Open</a> |
+    <a href="?status=on_hold" {% if status_filter == 'on_hold' %}style="font-weight:bold"{% endif %}>On Hold</a> |
+    <a href="?status=filled" {% if status_filter == 'filled' %}style="font-weight:bold"{% endif %}>Filled</a> |
+    <a href="?status=cancelled" {% if status_filter == 'cancelled' %}style="font-weight:bold"{% endif %}>Cancelled</a>
+</p>
+{% if jobs %}
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Title</th><th scope="col">Department</th><th scope="col">Location</th><th scope="col">Status</th></tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a></td>
+                <td>{{ job.department|default:"—" }}</td>
+                <td>{{ job.location|default:"—" }}</td>
+                <td>{{ job.get_status_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="muted">No jobs with this status. <a href="{% url 'job_create' %}">Add a job</a>.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Application Tracking System</h1>
+<div class="stats">
+    <div class="stat"><strong>{{ stats.open_jobs }}</strong> Open jobs</div>
+    <div class="stat"><strong>{{ stats.total_candidates }}</strong> Candidates</div>
+    <div class="stat"><strong>{{ stats.applications_pending }}</strong> Applications in progress</div>
+</div>
+<div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">Open positions</h2>
+    {% if jobs %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Job</th><th scope="col">Department</th><th scope="col">Location</th></tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a></td>
+                <td>{{ job.department|default:"—" }}</td>
+                <td>{{ job.location|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="muted"><a href="{% url 'job_list' %}">View all jobs →</a></p>
+    {% else %}
+    <p class="muted">No open jobs. <a href="{% url 'job_create' %}">Add one</a>.</p>
+    {% endif %}
+</div>
+<div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">Recent applications</h2>
+    {% if recent_applications %}
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Candidate</th><th scope="col">Job</th><th scope="col">Status</th><th scope="col">Date</th></tr>
+        </thead>
+        <tbody>
+            {% for app in recent_applications %}
+            <tr>
+                <td><a href="{% url 'candidate_detail' app.candidate.pk %}">{{ app.candidate }}</a></td>
+                <td><a href="{% url 'job_detail' app.job.pk %}">{{ app.job.title }}</a></td>
+                <td>{{ app.get_status_display }}</td>
+                <td class="muted">{{ app.applied_at|date:"M j, Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="muted"><a href="{% url 'application_list' %}">View all applications →</a></p>
+    {% else %}
+    <p class="muted">No applications yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

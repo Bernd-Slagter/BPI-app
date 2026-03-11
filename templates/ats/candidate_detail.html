@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ candidate }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb"><a href="{% url 'candidate_list' %}">Candidates</a><span>›</span>{{ candidate }}</nav>
+<h1>{{ candidate.last_name }}, {{ candidate.first_name }}</h1>
+<div class="card">
+    <p><strong>Email:</strong> <a href="mailto:{{ candidate.email }}">{{ candidate.email }}</a></p>
+    <p><strong>Phone:</strong> {{ candidate.phone|default:"—" }}</p>
+    {% if candidate.resume_summary %}
+    <p><strong>Summary:</strong><br>{{ candidate.resume_summary|linebreaks }}</p>
+    {% endif %}
+    <p class="muted">Created {{ candidate.created_at|date:"M j, Y" }}</p>
+    <div class="actions">
+        <a href="{% url 'candidate_edit' candidate.pk %}" class="btn">Edit</a>
+        <a href="{% url 'candidate_delete' candidate.pk %}" class="btn btn-secondary">Delete</a>
+    </div>
+</div>
+<h2 style="font-size:1.1rem;">Applications – stage in process</h2>
+{% if candidate.applications.all %}
+<div class="card">
+    {% for app in candidate.applications.all %}
+    <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
+        <div style="margin-bottom:0.4rem;">
+            <a href="{% url 'job_detail' app.job.pk %}">{{ app.job.title }}</a>
+            <span class="muted"> · Applied {{ app.applied_at|date:"M j, Y" }}</span>
+            <a href="{% url 'application_edit' app.pk %}" class="muted" style="margin-left:0.5rem;">Edit</a>
+        </div>
+        <div class="pipeline-strip">
+            {% for stage_key, stage_label in pipeline_stages %}
+            {% if not forloop.first %}<span class="stage-connector"><svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M0 8h18m0 0l-5-5m5 5l-5 5" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{% endif %}
+            <span class="stage {% if app.status == stage_key %}current{% endif %}">{{ stage_label }}</span>
+            {% endfor %}
+            <span class="stage-connector"><svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M0 8h18m0 0l-5-5m5 5l-5 5" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            {% for stage_key, stage_label in outcome_stages %}
+            <span class="stage outcome {% if app.status == stage_key %}current{% endif %}">{{ stage_label }}</span>
+            {% if not forloop.last %}<span class="stage-connector"><svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M0 8h18m0 0l-5-5m5 5l-5 5" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="muted">No applications yet.</p>
+{% endif %}
+<p><a href="{% url 'candidate_list' %}">← Back to candidates</a></p>
+{% endblock %}

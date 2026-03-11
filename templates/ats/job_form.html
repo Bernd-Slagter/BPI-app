@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% if job %}<nav class="breadcrumb"><a href="{% url 'job_list' %}">Jobs</a><span>›</span><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a><span>›</span>Edit</nav>{% else %}<nav class="breadcrumb"><a href="{% url 'job_list' %}">Jobs</a><span>›</span>Add job</nav>{% endif %}
+<h1>{{ title }}</h1>
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+        {% for field in form %}
+        <div class="form-row {% if field.field.required %}required{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {{ field.errors }}
+        </div>
+        {% endfor %}
+        <div class="actions">
+            <button type="submit" class="btn">Save</button>
+            <a href="{% if job %}{% url 'job_detail' job.pk %}{% else %}{% url 'job_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

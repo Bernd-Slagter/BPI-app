@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Candidates{% endblock %}
+{% block content %}
+<h1>Candidates</h1>
+<p class="actions"><a href="{% url 'candidate_create' %}" class="btn">Add candidate</a></p>
+{% if candidates %}
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Applications</th></tr>
+        </thead>
+        <tbody>
+            {% for c in candidates %}
+            <tr>
+                <td><a href="{% url 'candidate_detail' c.pk %}">{{ c.last_name }}, {{ c.first_name }}</a></td>
+                <td><a href="mailto:{{ c.email }}">{{ c.email }}</a></td>
+                <td>{{ c.phone|default:"—" }}</td>
+                <td>{{ c.applications.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="muted">No candidates. <a href="{% url 'candidate_create' %}">Add one</a>.</p>
+{% endif %}
+{% endblock %}

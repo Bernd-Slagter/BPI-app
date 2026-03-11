@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Applications{% endblock %}
+{% block content %}
+<h1>Applications</h1>
+<p class="actions"><a href="{% url 'application_create' %}" class="btn">Add application</a></p>
+<p class="muted">
+    Filter: <a href="?" {% if not status_filter %}style="font-weight:bold"{% endif %}>All</a> |
+    <a href="?status=submitted" {% if status_filter == 'submitted' %}style="font-weight:bold"{% endif %}>Submitted</a> |
+    <a href="?status=screening" {% if status_filter == 'screening' %}style="font-weight:bold"{% endif %}>Screening</a> |
+    <a href="?status=interview" {% if status_filter == 'interview' %}style="font-weight:bold"{% endif %}>Interview</a> |
+    <a href="?status=offer" {% if status_filter == 'offer' %}style="font-weight:bold"{% endif %}>Offer</a> |
+    <a href="?status=hired" {% if status_filter == 'hired' %}style="font-weight:bold"{% endif %}>Hired</a> |
+    <a href="?status=rejected" {% if status_filter == 'rejected' %}style="font-weight:bold"{% endif %}>Rejected</a> |
+    <a href="?status=withdrawn" {% if status_filter == 'withdrawn' %}style="font-weight:bold"{% endif %}>Withdrawn</a>
+</p>
+{% if applications %}
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr><th scope="col">Candidate</th><th scope="col">Job</th><th scope="col">Status</th><th scope="col">Applied</th><th scope="col"></th></tr>
+        </thead>
+        <tbody>
+            {% for app in applications %}
+            <tr>
+                <td><a href="{% url 'candidate_detail' app.candidate.pk %}">{{ app.candidate }}</a> <span class="muted">({{ app.candidate.email }})</span></td>
+                <td><a href="{% url 'job_detail' app.job.pk %}">{{ app.job.title }}</a></td>
+                <td>{{ app.get_status_display }}</td>
+                <td class="muted">{{ app.applied_at|date:"M j, Y" }}</td>
+                <td><a href="{% url 'application_edit' app.pk %}">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="muted">No applications{% if status_filter %} with this status{% endif %}.</p>
+{% endif %}
+{% endblock %}

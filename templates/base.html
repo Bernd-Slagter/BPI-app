@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ATS{% endblock %} | Application Tracking</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --border: #2d3a4d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .skip-link { position: absolute; top: -100px; left: 1rem; padding: 0.5rem 1rem; background: var(--accent); color: var(--bg); z-index: 100; border-radius: 6px; }
+        .skip-link:focus { top: 1rem; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { color: var(--accent-hover); }
+        a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .wrap { max-width: 960px; margin: 0 auto; padding: 1rem 1.5rem; }
+        nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; }
+        nav a { margin-right: 1.25rem; }
+        h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 600; }
+        .muted { color: var(--muted); font-size: 0.9rem; }
+        .stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.5rem; min-width: 140px; }
+        .stat strong { display: block; font-size: 1.5rem; color: var(--accent); }
+        .input { width: 100%; max-width: 400px; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font: inherit; }
+        .input:focus { outline: none; border-color: var(--accent); }
+        textarea.input { max-width: 100%; min-height: 80px; resize: vertical; }
+        .form-row { margin-bottom: 1rem; }
+        .form-row label { display: block; margin-bottom: 0.25rem; color: var(--muted); font-size: 0.9rem; }
+        .btn { display: inline-block; padding: 0.5rem 1rem; background: var(--accent); color: var(--bg); border: none; border-radius: 6px; font: inherit; cursor: pointer; text-decoration: none; }
+        .btn:hover { background: var(--accent-hover); color: var(--bg); }
+        .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-danger { background: #da3633; }
+        .btn-danger:hover { background: #f85149; }
+        .actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .errorlist { color: #f85149; font-size: 0.9rem; margin: 0.25rem 0 0; padding: 0; list-style: none; }
+        .form-row.required label::after { content: ' *'; color: #f85149; }
+        .messages { list-style: none; padding: 0; margin: 0 0 1rem; }
+        .messages li { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; }
+        .messages .success { background: rgba(46,160,67,0.2); border: 1px solid #2ea043; color: #7ee787; }
+        .messages .error { background: rgba(218,54,51,0.2); border: 1px solid #da3633; color: #f85149; }
+        .breadcrumb { margin: 0 0 1rem; font-size: 0.9rem; color: var(--muted); }
+        .breadcrumb a { color: var(--muted); }
+        .breadcrumb a:hover { color: var(--accent); }
+        .breadcrumb span { margin: 0 0.35rem; }
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-wrap table { min-width: 500px; }
+        /* Pipeline flowchart – job view: columns with connecting lines/arrows */
+        .pipeline { display: flex; align-items: stretch; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .pipeline-cell { display: flex; align-items: stretch; flex: 0 0 auto; }
+        .pipeline-connector { display: flex; align-items: center; justify-content: center; min-width: 36px; position: relative; flex-shrink: 0; }
+        .pipeline-connector::before { content: ''; position: absolute; left: 0; right: 12px; top: 50%; height: 2px; margin-top: -1px; background: var(--accent); opacity: 0.7; }
+        .pipeline-connector svg { position: relative; z-index: 1; flex-shrink: 0; filter: drop-shadow(0 0 1px var(--bg)); }
+        .pipeline-cell:first-child .pipeline-connector { min-width: 0; width: 0; display: none; }
+        .pipeline-cell.outcome-cell .pipeline-connector::before { background: #da3633; opacity: 0.8; }
+        .pipeline-cell.outcome-cell .pipeline-connector svg line,
+        .pipeline-cell.outcome-cell .pipeline-connector svg path { stroke: #da3633; }
+        .pipeline-column { flex: 0 0 120px; min-width: 120px; background: var(--surface); border: 1px solid var(--border); padding: 0.75rem; position: relative; }
+        .pipeline-column.outcome { background: rgba(218,54,51,0.12); border-color: rgba(218,54,51,0.5); }
+        .pipeline-column.outcome .pipeline-connector-accent::before { background: rgba(218,54,51,0.4); }
+        .pipeline-column h3 { margin: 0 0 0.5rem; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+        .pipeline-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem; font-size: 0.9rem; }
+        .pipeline-card:last-child { margin-bottom: 0; }
+        .pipeline-card a { color: inherit; }
+        .pipeline-card a:hover { color: var(--accent); }
+        .pipeline-card .muted { font-size: 0.75rem; }
+        /* Pipeline strip – candidate view: stages with connecting arrows */
+        .pipeline-strip { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; gap: 0; }
+        .pipeline-strip .stage { padding: 0.35rem 0.65rem; font-size: 0.75rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+        .pipeline-strip .stage.current { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+        .pipeline-strip .stage.outcome.current { background: #da3633; border-color: #da3633; }
+        .pipeline-strip .stage-connector { display: flex; align-items: center; padding: 0 2px; flex-shrink: 0; }
+        .pipeline-strip .stage-connector svg { display: block; }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <nav aria-label="Main navigation">
+        <a href="{% url 'home' %}">Dashboard</a>
+        <a href="{% url 'job_list' %}">Jobs</a>
+        <a href="{% url 'candidate_list' %}">Candidates</a>
+        <a href="{% url 'application_list' %}">Applications</a>
+        <a href="/admin/">Admin</a>
+    </nav>
+    <main id="main-content" class="wrap" role="main">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

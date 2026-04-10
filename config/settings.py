@@ -84,6 +84,34 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'audit': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'audit_file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'audit.log',
+            'formatter': 'audit',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'audit',
+        },
+    },
+    'loggers': {
+        'ats.audit': {
+            'handlers': ['audit_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
 LOGIN_URL = '/accounts/login/'

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -95,3 +96,25 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.candidate} → {self.job} ({self.get_status_display()})"
+
+
+class AuditLog(models.Model):
+    """Immutable record of every significant action in the system."""
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='audit_logs',
+    )
+    action = models.CharField(max_length=100, db_index=True)
+    object_type = models.CharField(max_length=50, blank=True)
+    object_id = models.IntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=250, blank=True)
+    detail = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.timestamp:%Y-%m-%d %H:%M} [{self.action}] {self.object_repr}"

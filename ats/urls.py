@@ -28,4 +28,6 @@ urlpatterns = [
     path('applications/<int:pk>/score/', views.application_score, name='application_score'),
     path('applications/<int:pk>/questions/', views.application_questions, name='application_questions'),
     path('candidates/<int:pk>/parse-resume/', views.candidate_parse_resume, name='candidate_parse_resume'),
+    # Audit log
+    path('audit/', views.audit_log_list, name='audit_log'),
 ]

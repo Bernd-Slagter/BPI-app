@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+    <h1 style="margin:0;">Audit Log</h1>
+    <span class="muted" style="font-size:0.85rem;">Last 500 entries</span>
+</div>
+
+<div class="filter-pills">
+    <span>Category:</span>
+    {% for key, label in categories %}
+    <a href="{% if key %}?action={{ key }}{% else %}?{% endif %}"
+       class="pill {% if action_filter == key %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if logs %}
+<div class="card table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Time</th>
+                <th scope="col">User</th>
+                <th scope="col">Action</th>
+                <th scope="col">Object</th>
+                <th scope="col">Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in logs %}
+            <tr>
+                <td class="muted" style="white-space:nowrap;font-size:0.82rem;">{{ entry.timestamp|date:"M j, Y H:i:s" }}</td>
+                <td style="font-size:0.85rem;">{{ entry.user.username|default:"—" }}</td>
+                <td>
+                    <span style="font-family:monospace;font-size:0.82rem;padding:0.15rem 0.4rem;border-radius:4px;
+                        {% if entry.action|slice:':2' == 'ai' %}background:rgba(88,166,255,0.1);color:var(--accent);
+                        {% elif entry.action|slice:':4' == 'auth' %}background:rgba(210,153,34,0.1);color:#d29922;
+                        {% elif entry.action|slice:':3' == 'job' %}background:rgba(63,185,80,0.1);color:#3fb950;
+                        {% elif entry.action|slice:':9' == 'candidate' %}background:rgba(248,81,73,0.08);color:#f0786e;
+                        {% else %}background:var(--surface);color:var(--muted);{% endif %}">
+                        {{ entry.action }}
+                    </span>
+                </td>
+                <td style="font-size:0.85rem;">
+                    {% if entry.object_type %}
+                    <span class="muted">{{ entry.object_type }}</span>
+                    {% if entry.object_repr %}: {{ entry.object_repr|truncatechars:60 }}{% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="muted" style="font-size:0.82rem;">{{ entry.detail|truncatechars:120 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2rem;">
+    <p class="muted">No audit log entries{% if action_filter %} for category "{{ action_filter }}"{% endif %}.</p>
+    {% if action_filter %}<a href="?" class="btn btn-secondary" style="margin-top:0.5rem;">Clear filter</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

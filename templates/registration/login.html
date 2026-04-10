@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in | Application Tracking</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --border: #2d3a4d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+            width: 100%;
+            max-width: 380px;
+        }
+        .login-box h1 {
+            margin: 0 0 0.25rem;
+            font-size: 1.4rem;
+        }
+        .login-box p.sub {
+            margin: 0 0 1.5rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+        /* Django auth form renders inputs without class — style by type */
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.55rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font: inherit;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+        input:focus { outline: none; border-color: var(--accent); }
+        button[type="submit"] {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button[type="submit"]:hover { background: var(--accent-hover); }
+        .errors {
+            background: rgba(218,54,51,0.15);
+            border: 1px solid #da3633;
+            color: #f85149;
+            border-radius: 6px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.88rem;
+            margin-bottom: 1rem;
+            list-style: none;
+        }
+        .errors li { margin: 0; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>Sign in</h1>
+        <p class="sub">Application Tracking System</p>
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <ul class="errors">
+                {% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            <label for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<ul class="errors">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            <label for="id_password">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}<ul class="errors">{% for e in form.password.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit">Sign in</button>
+        </form>
+    </div>
+</body>
+</html>

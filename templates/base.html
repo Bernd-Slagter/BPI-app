@@ -83,6 +83,30 @@
         .pipeline-strip .stage.outcome.current { background: #da3633; border-color: #da3633; }
         .pipeline-strip .stage-connector { display: flex; align-items: center; padding: 0 2px; flex-shrink: 0; }
         .pipeline-strip .stage-connector svg { display: block; }
+        /* Filter pills */
+        .filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+        .filter-pills span { color: var(--muted); font-size: 0.85rem; margin-right: 0.25rem; }
+        .pill { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.82rem; background: var(--surface); border: 1px solid var(--border); color: var(--muted); text-decoration: none; }
+        .pill:hover { border-color: var(--accent); color: var(--accent); }
+        .pill.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+        /* AI button spinner */
+        .btn-ai { position: relative; }
+        .btn-ai.loading { opacity: 0.7; cursor: not-allowed; padding-left: 2rem; }
+        .btn-ai.loading::before { content: ''; position: absolute; left: 0.6rem; top: 50%; width: 12px; height: 12px; margin-top: -6px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Field hints */
+        .field-hint { margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--muted); }
+        /* AI badge */
+        .ai-badge { display: inline-block; font-size: 0.7rem; background: rgba(88,166,255,0.12); border: 1px solid rgba(88,166,255,0.3); color: var(--accent); border-radius: 4px; padding: 0.1rem 0.4rem; vertical-align: middle; margin-left: 0.3rem; }
+        /* Score badge */
+        .score-badge { display: inline-block; font-size: 0.8rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; }
+        .score-high { background: rgba(63,185,80,0.15); color: #3fb950; }
+        .score-mid  { background: rgba(210,153,34,0.15); color: #d29922; }
+        .score-low  { background: rgba(248,81,73,0.15); color: #f85149; }
+        /* Notice box */
+        .notice { padding: 0.6rem 0.9rem; border-radius: 6px; font-size: 0.88rem; margin-bottom: 1rem; }
+        .notice-info  { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); color: var(--accent); }
+        .notice-warn  { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.4); color: #d29922; }
     </style>
 </head>
 <body>
@@ -93,6 +117,12 @@
         <a href="{% url 'candidate_list' %}">Candidates</a>
         <a href="{% url 'application_list' %}">Applications</a>
         <a href="/admin/">Admin</a>
+        {% if user.is_authenticated %}
+        <span style="float:right;color:var(--muted);font-size:0.85rem;">
+            {{ user.username }} &nbsp;·&nbsp;
+            <a href="{% url 'logout' %}" style="color:var(--muted);">Sign out</a>
+        </span>
+        {% endif %}
     </nav>
     <main id="main-content" class="wrap" role="main">
         {% if messages %}
@@ -104,5 +134,29 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Loading state on AI buttons
+        document.querySelectorAll('form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                var btn = form.querySelector('button[type="submit"][data-loading]');
+                if (btn) {
+                    var txt = btn.getAttribute('data-loading') || 'Working...';
+                    btn.disabled = true;
+                    btn.textContent = txt;
+                    btn.classList.add('loading');
+                }
+            });
+        });
+        // Auto-dismiss messages after 5s
+        document.querySelectorAll('.messages li').forEach(function (el) {
+            setTimeout(function () {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function () { el.remove(); }, 500);
+            }, 5000);
+        });
+    });
+    </script>
 </body>
 </html>

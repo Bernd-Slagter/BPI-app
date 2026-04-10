@@ -1,25 +1,128 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<nav class="breadcrumb"><a href="{% url 'application_list' %}">Applications</a><span>›</span>Edit</nav>
-<h1>{{ title }}</h1>
+<nav class="breadcrumb"><a href="{% url 'application_list' %}">Applications</a><span>›</span>{{ application.candidate }} → {{ application.job.title }}</nav>
+<h1 style="margin-bottom:0.25rem;">{{ application.candidate }}</h1>
+<p class="muted" style="margin-top:0;margin-bottom:1rem;">
+    Applying for <a href="{% url 'job_detail' application.job.pk %}"><strong>{{ application.job.title }}</strong></a>
+    {% if application.job.department %} · {{ application.job.department }}{% endif %}
+    &nbsp;·&nbsp; Applied {{ application.applied_at|date:"M j, Y" }}
+</p>
+
+{% if not application.candidate.resume_summary %}
+<div class="notice notice-warn">No resume summary for this candidate — AI scores and screening will be inaccurate. <a href="{% url 'candidate_edit' application.candidate.pk %}">Add a summary or upload a resume →</a></div>
+{% endif %}
+
 <div class="card">
-    <p class="muted"><strong>Job:</strong> <a href="{% url 'job_detail' application.job.pk %}">{{ application.job.title }}</a> · <strong>Candidate:</strong> <a href="{% url 'candidate_detail' application.candidate.pk %}">{{ application.candidate }}</a></p>
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% if form.non_field_errors %}<ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+        {% if application.attachment %}
+        <p class="muted" style="margin-top:0;">Existing attachment: <a href="{{ application.attachment.url }}" target="_blank" rel="noopener">Download</a></p>
+        {% endif %}
+        {% if application.contract_file %}
+        <p class="muted">Existing contract: <a href="{{ application.contract_file.url }}" target="_blank" rel="noopener">Download</a></p>
+        {% endif %}
         {% for field in form %}
-        <div class="form-row {% if field.field.required %}required{% endif %}">
+        <div class="form-row {% if field.field.required %}required{% endif %}
+            {% if field.name == 'interview_date' %}field-interview{% endif %}
+            {% if field.name == 'offer_amount' %}field-offer{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
+            {% if field.name == 'interview_date' %}<p class="field-hint">Set when scheduling the interview stage.</p>{% endif %}
+            {% if field.name == 'offer_amount' %}<p class="field-hint">Annual offer amount — visible only to recruiters.</p>{% endif %}
             {{ field.errors }}
         </div>
         {% endfor %}
         <div class="actions">
-            <button type="submit" class="btn">Save</button>
-            <a href="{% url 'application_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn" data-loading="Saving...">Save</button>
+            <a href="{% url 'application_list' %}" class="btn btn-secondary">Back to list</a>
             <a href="{% url 'application_delete' application.pk %}" class="btn btn-danger">Delete</a>
         </div>
     </form>
 </div>
+
+<!-- AI: Match Score -->
+<div class="card" style="margin-top:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="margin:0;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">AI Match Score <span class="ai-badge">Claude</span></h3>
+        <form method="post" action="{% url 'application_score' application.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-ai" style="font-size:0.82rem;" data-loading="Scoring...">{% if application.ai_match_score is not None %}Re-score{% else %}Score{% endif %}</button>
+        </form>
+    </div>
+    {% if application.ai_match_score is not None %}
+    <div style="margin-top:0.75rem;display:flex;align-items:baseline;gap:0.5rem;">
+        <span style="font-size:2rem;font-weight:700;color:{% if application.ai_match_score >= 70 %}#3fb950{% elif application.ai_match_score >= 40 %}#d29922{% else %}#f85149{% endif %};">{{ application.ai_match_score }}</span>
+        <span class="muted">/100</span>
+        <span class="muted" style="font-size:0.75rem;">{% if application.ai_match_score >= 70 %}Strong match{% elif application.ai_match_score >= 40 %}Partial match{% else %}Weak match{% endif %}</span>
+    </div>
+    {% if application.ai_match_rationale %}<p style="font-size:0.9rem;margin:0.25rem 0 0;color:var(--muted);">{{ application.ai_match_rationale }}</p>{% endif %}
+    {% else %}
+    <p class="muted" style="font-size:0.9rem;margin-top:0.5rem;">Not yet scored — click Score to run.</p>
+    {% endif %}
+</div>
+
+<!-- AI: Screening -->
+<div class="card" style="margin-top:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="margin:0;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">AI Screening <span class="ai-badge">Claude</span></h3>
+        <form method="post" action="{% url 'application_screen' application.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-ai" style="font-size:0.82rem;" data-loading="Screening...">{% if application.ai_screening_notes %}Re-screen{% else %}Screen{% endif %}</button>
+        </form>
+    </div>
+    {% if application.ai_screening_notes %}
+    <div style="margin-top:0.75rem;">
+        {% with notes=application.ai_screening_notes %}
+        {% if '[ADVANCE]' in notes %}<span style="display:inline-block;background:rgba(63,185,80,0.15);color:#3fb950;border-radius:4px;padding:0.2rem 0.6rem;font-size:0.82rem;font-weight:700;margin-bottom:0.5rem;">ADVANCE</span>
+        {% elif '[REJECT]' in notes %}<span style="display:inline-block;background:rgba(248,81,73,0.15);color:#f85149;border-radius:4px;padding:0.2rem 0.6rem;font-size:0.82rem;font-weight:700;margin-bottom:0.5rem;">REJECT</span>
+        {% elif '[HOLD]' in notes %}<span style="display:inline-block;background:rgba(210,153,34,0.15);color:#d29922;border-radius:4px;padding:0.2rem 0.6rem;font-size:0.82rem;font-weight:700;margin-bottom:0.5rem;">HOLD</span>
+        {% endif %}
+        <p style="font-size:0.9rem;margin:0;color:var(--muted);">{{ notes|slice:"10:" }}</p>
+        {% endwith %}
+    </div>
+    {% else %}
+    <p class="muted" style="font-size:0.9rem;margin-top:0.5rem;">Not yet screened — click Screen to run.</p>
+    {% endif %}
+</div>
+
+<!-- AI: Interview Questions (only for interview stage) -->
+{% if application.status == 'interview' %}
+<div class="card" style="margin-top:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="margin:0;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">AI Interview Guide <span class="ai-badge">Claude</span></h3>
+        <form method="post" action="{% url 'application_questions' application.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-ai" style="font-size:0.82rem;" data-loading="Generating questions...">{% if application.ai_interview_questions %}Regenerate{% else %}Generate{% endif %} questions</button>
+        </form>
+    </div>
+    {% if application.ai_interview_questions %}
+    <div style="margin-top:0.75rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:1rem;font-size:0.88rem;line-height:1.7;white-space:pre-wrap;">{{ application.ai_interview_questions }}</div>
+    {% else %}
+    <p class="muted" style="font-size:0.9rem;margin-top:0.5rem;">No questions generated yet — click Generate to create a tailored interview guide.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+// Show/hide stage-specific fields based on selected status
+(function () {
+    var statusSelect = document.querySelector('[name="status"]');
+    if (!statusSelect) return;
+    function updateVisibility() {
+        var status = statusSelect.value;
+        var interviewFields = document.querySelectorAll('.field-interview');
+        var offerFields = document.querySelectorAll('.field-offer');
+        interviewFields.forEach(function (el) {
+            el.style.display = (status === 'interview') ? '' : 'none';
+        });
+        offerFields.forEach(function (el) {
+            el.style.display = (status === 'offer' || status === 'hired') ? '' : 'none';
+        });
+    }
+    statusSelect.addEventListener('change', updateVisibility);
+    updateVisibility();
+})();
+</script>
 {% endblock %}

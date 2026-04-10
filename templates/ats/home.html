@@ -1,43 +1,109 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1>Application Tracking System</h1>
+<h1 style="margin-bottom:1rem;">Dashboard</h1>
+
+<!-- Stats row -->
 <div class="stats">
     <div class="stat"><strong>{{ stats.open_jobs }}</strong> Open jobs</div>
     <div class="stat"><strong>{{ stats.total_candidates }}</strong> Candidates</div>
-    <div class="stat"><strong>{{ stats.applications_pending }}</strong> Applications in progress</div>
+    <div class="stat"><strong>{{ stats.applications_pending }}</strong> In progress</div>
+    <div class="stat"><strong>{{ stats.hired_this_month }}</strong> Hired</div>
 </div>
+
+<!-- Pipeline breakdown -->
+<div class="card" style="padding:0.75rem 1.25rem;margin-bottom:1rem;">
+    <p class="muted" style="margin:0 0 0.6rem;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;">Application pipeline</p>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+        <a href="{% url 'application_list' %}?status=submitted" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--text);">{{ stats.pipeline_counts.submitted }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Submitted</div>
+        </a>
+        <div class="muted" style="font-size:1.1rem;">›</div>
+        <a href="{% url 'application_list' %}?status=screening" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--text);">{{ stats.pipeline_counts.screening }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Screening</div>
+        </a>
+        <div class="muted" style="font-size:1.1rem;">›</div>
+        <a href="{% url 'application_list' %}?status=interview" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--text);">{{ stats.pipeline_counts.interview }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Interview</div>
+        </a>
+        <div class="muted" style="font-size:1.1rem;">›</div>
+        <a href="{% url 'application_list' %}?status=offer" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--text);">{{ stats.pipeline_counts.offer }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Offer</div>
+        </a>
+        <div class="muted" style="font-size:1.1rem;">›</div>
+        <a href="{% url 'application_list' %}?status=hired" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#3fb950;">{{ stats.pipeline_counts.hired }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Hired</div>
+        </a>
+        <div style="width:1px;background:var(--border);height:36px;margin:0 0.25rem;"></div>
+        <a href="{% url 'application_list' %}?status=rejected" style="text-decoration:none;text-align:center;min-width:70px;">
+            <div style="font-size:1.4rem;font-weight:700;color:#f85149;">{{ stats.pipeline_counts.rejected }}</div>
+            <div class="muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">Rejected</div>
+        </a>
+    </div>
+</div>
+
+<!-- Open positions -->
 <div class="card">
-    <h2 style="margin-top:0;font-size:1.1rem;">Open positions</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <h2 style="margin:0;font-size:1.05rem;">Open positions</h2>
+        <a href="{% url 'job_create' %}" class="btn btn-secondary" style="font-size:0.82rem;padding:0.3rem 0.7rem;">+ Add job</a>
+    </div>
     {% if jobs %}
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th scope="col">Job</th><th scope="col">Department</th><th scope="col">Location</th></tr>
+            <tr>
+                <th scope="col">Job</th>
+                <th scope="col">Department</th>
+                <th scope="col">Location</th>
+                <th scope="col">Type</th>
+                <th scope="col">Applicants</th>
+                <th scope="col">Deadline</th>
+            </tr>
         </thead>
         <tbody>
             {% for job in jobs %}
             <tr>
                 <td><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a></td>
-                <td>{{ job.department|default:"—" }}</td>
-                <td>{{ job.location|default:"—" }}</td>
+                <td class="muted">{{ job.department|default:"—" }}</td>
+                <td class="muted">{{ job.location|default:"—" }}</td>
+                <td class="muted">{{ job.get_employment_type_display|default:"—" }}</td>
+                <td>{{ job.app_count }}</td>
+                <td class="muted">{% if job.deadline %}{{ job.deadline|date:"M j, Y" }}{% else %}—{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     </div>
-    <p class="muted"><a href="{% url 'job_list' %}">View all jobs →</a></p>
+    <p class="muted" style="margin-bottom:0;"><a href="{% url 'job_list' %}">View all jobs →</a></p>
     {% else %}
-    <p class="muted">No open jobs. <a href="{% url 'job_create' %}">Add one</a>.</p>
+    <p class="muted">No open jobs. <a href="{% url 'job_create' %}">Post one now →</a></p>
     {% endif %}
 </div>
+
+<!-- Recent applications -->
 <div class="card">
-    <h2 style="margin-top:0;font-size:1.1rem;">Recent applications</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <h2 style="margin:0;font-size:1.05rem;">Recent applications</h2>
+        <a href="{% url 'application_create' %}" class="btn btn-secondary" style="font-size:0.82rem;padding:0.3rem 0.7rem;">+ Add</a>
+    </div>
     {% if recent_applications %}
     <div class="table-wrap">
     <table>
         <thead>
-            <tr><th scope="col">Candidate</th><th scope="col">Job</th><th scope="col">Status</th><th scope="col">Date</th></tr>
+            <tr>
+                <th scope="col">Candidate</th>
+                <th scope="col">Job</th>
+                <th scope="col">Status</th>
+                <th scope="col">AI Score</th>
+                <th scope="col">Screening</th>
+                <th scope="col">Date</th>
+            </tr>
         </thead>
         <tbody>
             {% for app in recent_applications %}
@@ -45,15 +111,28 @@
                 <td><a href="{% url 'candidate_detail' app.candidate.pk %}">{{ app.candidate }}</a></td>
                 <td><a href="{% url 'job_detail' app.job.pk %}">{{ app.job.title }}</a></td>
                 <td>{{ app.get_status_display }}</td>
-                <td class="muted">{{ app.applied_at|date:"M j, Y" }}</td>
+                <td>
+                    {% if app.ai_match_score is not None %}
+                    <span class="score-badge {% if app.ai_match_score >= 70 %}score-high{% elif app.ai_match_score >= 40 %}score-mid{% else %}score-low{% endif %}">{{ app.ai_match_score }}</span>
+                    {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+                <td>
+                    {% if app.ai_screening_notes %}
+                        {% if '[ADVANCE]' in app.ai_screening_notes %}<span class="score-badge score-high">Advance</span>
+                        {% elif '[REJECT]' in app.ai_screening_notes %}<span class="score-badge score-low">Reject</span>
+                        {% elif '[HOLD]' in app.ai_screening_notes %}<span class="score-badge score-mid">Hold</span>
+                        {% else %}<span class="muted">—</span>{% endif %}
+                    {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+                <td class="muted">{{ app.applied_at|date:"M j" }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     </div>
-    <p class="muted"><a href="{% url 'application_list' %}">View all applications →</a></p>
+    <p class="muted" style="margin-bottom:0;"><a href="{% url 'application_list' %}">View all applications →</a></p>
     {% else %}
-    <p class="muted">No applications yet.</p>
+    <p class="muted">No applications yet. <a href="{% url 'application_create' %}">Create one →</a></p>
     {% endif %}
 </div>
 {% endblock %}

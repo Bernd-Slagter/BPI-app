@@ -1,20 +1,39 @@
 {% extends 'base.html' %}
 {% block title %}Candidates{% endblock %}
 {% block content %}
-<h1>Candidates</h1>
-<p class="actions"><a href="{% url 'candidate_create' %}" class="btn">Add candidate</a></p>
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+    <h1 style="margin:0;">Candidates</h1>
+    <a href="{% url 'candidate_create' %}" class="btn">+ Add candidate</a>
+</div>
 {% if candidates %}
 <div class="card table-wrap">
     <table>
         <thead>
-            <tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Applications</th></tr>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Source</th>
+                <th scope="col">Resume</th>
+                <th scope="col">Applications</th>
+            </tr>
         </thead>
         <tbody>
             {% for c in candidates %}
             <tr>
                 <td><a href="{% url 'candidate_detail' c.pk %}">{{ c.last_name }}, {{ c.first_name }}</a></td>
                 <td><a href="mailto:{{ c.email }}">{{ c.email }}</a></td>
-                <td>{{ c.phone|default:"—" }}</td>
+                <td class="muted">{{ c.phone|default:"—" }}</td>
+                <td class="muted">{{ c.get_source_display|default:"—" }}</td>
+                <td>
+                    {% if c.resume_summary %}
+                        <span style="color:#3fb950;font-size:0.82rem;" title="{{ c.resume_summary|truncatechars:120 }}">✓ Summary</span>
+                    {% elif c.resume_file %}
+                        <span class="muted" style="font-size:0.82rem;">File only</span>
+                    {% else %}
+                        <span class="muted" style="font-size:0.82rem;">—</span>
+                    {% endif %}
+                </td>
                 <td>{{ c.applications.count }}</td>
             </tr>
             {% endfor %}
@@ -22,6 +41,9 @@
     </table>
 </div>
 {% else %}
-<p class="muted">No candidates. <a href="{% url 'candidate_create' %}">Add one</a>.</p>
+<div class="card" style="text-align:center;padding:2rem;">
+    <p class="muted">No candidates yet.</p>
+    <a href="{% url 'candidate_create' %}" class="btn" style="margin-top:0.5rem;">Add first candidate →</a>
+</div>
 {% endif %}
 {% endblock %}

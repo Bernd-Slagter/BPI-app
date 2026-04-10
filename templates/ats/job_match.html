@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Match candidates – {{ job.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{% url 'job_list' %}">Jobs</a><span>›</span>
+    <a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a><span>›</span>
+    AI Candidate Match
+</nav>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+    <h1 style="margin:0;">Candidate Match <span class="ai-badge">Claude</span></h1>
+    <a href="{% url 'job_detail' job.pk %}" class="btn btn-secondary">← Back to job</a>
+</div>
+<p class="muted" style="margin-bottom:1.25rem;">Candidates ranked by AI fit score for <strong>{{ job.title }}</strong>. Only candidates who have not yet applied are shown.</p>
+
+{% if no_candidates %}
+<div class="card" style="text-align:center;padding:2rem;">
+    <p class="muted">All candidates have already applied to this job.</p>
+    <a href="{% url 'candidate_create' %}" class="btn" style="margin-top:0.5rem;">Add a new candidate</a>
+</div>
+
+{% elif results %}
+
+{% with scored=results|length %}
+<p class="muted" style="font-size:0.85rem;margin-bottom:0.75rem;">
+    {{ scored }} candidate{{ scored|pluralize }} evaluated
+    {% with no_summary_count=0 %}{% endwith %}
+</p>
+{% endwith %}
+
+<div class="card" style="padding:0;">
+    {% for item in results %}
+    <div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <!-- Score -->
+        <div style="flex-shrink:0;width:52px;text-align:center;">
+            {% if item.score is not None %}
+            <div style="font-size:1.4rem;font-weight:700;line-height:1;color:{% if item.score >= 70 %}#3fb950{% elif item.score >= 40 %}#d29922{% else %}#f85149{% endif %};">{{ item.score }}</div>
+            <div class="muted" style="font-size:0.7rem;">/100</div>
+            {% else %}
+            <div style="font-size:1.1rem;color:var(--muted);">—</div>
+            <div class="muted" style="font-size:0.7rem;">no CV</div>
+            {% endif %}
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{% url 'candidate_detail' item.candidate.pk %}" style="font-weight:600;">{{ item.candidate }}</a>
+                <span class="muted" style="font-size:0.85rem;">{{ item.candidate.email }}</span>
+                {% if item.score is not None %}
+                <span style="font-size:0.75rem;color:{% if item.score >= 70 %}#3fb950{% elif item.score >= 40 %}#d29922{% else %}#f85149{% endif %};">
+                    {% if item.score >= 70 %}Strong match{% elif item.score >= 40 %}Partial match{% else %}Weak match{% endif %}
+                </span>
+                {% endif %}
+            </div>
+            {% if item.rationale %}
+            <p style="margin:0.3rem 0 0;font-size:0.85rem;color:var(--muted);">{{ item.rationale }}</p>
+            {% elif not item.candidate.resume_summary %}
+            <p style="margin:0.3rem 0 0;font-size:0.85rem;color:var(--muted);">No resume summary — <a href="{% url 'candidate_edit' item.candidate.pk %}">add one</a> for AI scoring.</p>
+            {% endif %}
+        </div>
+        <!-- Action -->
+        <div style="flex-shrink:0;">
+            <a href="{% url 'application_create' %}?job={{ job.pk }}&candidate={{ item.candidate.pk }}" class="btn btn-secondary" style="font-size:0.85rem;white-space:nowrap;">+ Apply</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="card" style="text-align:center;padding:2rem;">
+    <p class="muted">No results — something went wrong.</p>
+</div>
+{% endif %}
+{% endblock %}

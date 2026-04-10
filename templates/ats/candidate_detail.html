@@ -4,26 +4,53 @@
 <nav class="breadcrumb"><a href="{% url 'candidate_list' %}">Candidates</a><span>›</span>{{ candidate }}</nav>
 <h1>{{ candidate.last_name }}, {{ candidate.first_name }}</h1>
 <div class="card">
-    <p><strong>Email:</strong> <a href="mailto:{{ candidate.email }}">{{ candidate.email }}</a></p>
-    <p><strong>Phone:</strong> {{ candidate.phone|default:"—" }}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.4rem 1.5rem;margin-bottom:0.75rem;">
+        <p style="margin:0;"><strong>Email:</strong> <a href="mailto:{{ candidate.email }}">{{ candidate.email }}</a></p>
+        <p style="margin:0;"><strong>Phone:</strong> {{ candidate.phone|default:"—" }}</p>
+        <p style="margin:0;"><strong>Source:</strong> {{ candidate.get_source_display|default:"—" }}</p>
+        {% if candidate.linkedin_url %}
+        <p style="margin:0;"><strong>LinkedIn:</strong> <a href="{{ candidate.linkedin_url }}" target="_blank" rel="noopener">Profile →</a></p>
+        {% endif %}
+        {% if candidate.resume_file %}
+        <p style="margin:0;"><strong>Resume:</strong> <a href="{{ candidate.resume_file.url }}" target="_blank" rel="noopener">Download</a></p>
+        {% endif %}
+    </div>
     {% if candidate.resume_summary %}
-    <p><strong>Summary:</strong><br>{{ candidate.resume_summary|linebreaks }}</p>
+    <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.5rem;">
+        <p style="margin:0 0 0.25rem;color:var(--muted);font-size:0.85rem;">AI Resume Summary <span class="ai-badge">Claude</span></p>
+        <div style="font-size:0.9rem;line-height:1.6;">{{ candidate.resume_summary|linebreaks }}</div>
+    </div>
     {% endif %}
-    <p class="muted">Created {{ candidate.created_at|date:"M j, Y" }}</p>
-    <div class="actions">
+    {% if conflicting_apps %}
+    <div class="notice notice-warn" style="margin-top:0.75rem;">
+        <strong>Warning:</strong> This candidate has multiple offers or hires:
+        <ul style="margin:0.25rem 0 0;padding-left:1.25rem;">
+            {% for app in conflicting_apps %}
+            <li>{{ app.job.title }} – {{ app.get_status_display }} ({{ app.applied_at|date:"M j, Y" }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <p class="muted" style="margin-top:0.75rem;margin-bottom:0.75rem;">Added {{ candidate.created_at|date:"M j, Y" }}</p>
+    <div class="actions" style="margin-top:0;">
         <a href="{% url 'candidate_edit' candidate.pk %}" class="btn">Edit</a>
+        <a href="{% url 'candidate_match_jobs' candidate.pk %}" class="btn btn-secondary btn-ai">✦ Find matching jobs</a>
         <a href="{% url 'candidate_delete' candidate.pk %}" class="btn btn-secondary">Delete</a>
     </div>
 </div>
+
 <h2 style="font-size:1.1rem;">Applications – stage in process</h2>
 {% if candidate.applications.all %}
 <div class="card">
     {% for app in candidate.applications.all %}
-    <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
-        <div style="margin-bottom:0.4rem;">
-            <a href="{% url 'job_detail' app.job.pk %}">{{ app.job.title }}</a>
-            <span class="muted"> · Applied {{ app.applied_at|date:"M j, Y" }}</span>
-            <a href="{% url 'application_edit' app.pk %}" class="muted" style="margin-left:0.5rem;">Edit</a>
+    <div style="margin-bottom:1rem;padding-bottom:1rem;{% if not forloop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;">
+            <span>
+                <a href="{% url 'job_detail' app.job.pk %}" style="font-weight:600;">{{ app.job.title }}</a>
+                {% if app.job.department %}<span class="muted"> · {{ app.job.department }}</span>{% endif %}
+                <span class="muted"> · Applied {{ app.applied_at|date:"M j, Y" }}</span>
+            </span>
+            <a href="{% url 'application_edit' app.pk %}" class="btn btn-secondary" style="font-size:0.82rem;padding:0.25rem 0.6rem;">Edit application</a>
         </div>
         <div class="pipeline-strip">
             {% for stage_key, stage_label in pipeline_stages %}
@@ -36,11 +63,52 @@
             {% if not forloop.last %}<span class="stage-connector"><svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M0 8h18m0 0l-5-5m5 5l-5 5" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>{% endif %}
             {% endfor %}
         </div>
+        <div style="margin-top:0.4rem;font-size:0.82rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap;">
+            {% if app.ai_match_score is not None %}
+            <span>Match: <strong class="score-badge {% if app.ai_match_score >= 70 %}score-high{% elif app.ai_match_score >= 40 %}score-mid{% else %}score-low{% endif %}">{{ app.ai_match_score }}/100</strong></span>
+            {% endif %}
+            {% if app.ai_screening_notes %}
+            <span>Screening:
+                {% if '[ADVANCE]' in app.ai_screening_notes %}<span class="score-badge score-high">Advance</span>
+                {% elif '[REJECT]' in app.ai_screening_notes %}<span class="score-badge score-low">Reject</span>
+                {% elif '[HOLD]' in app.ai_screening_notes %}<span class="score-badge score-mid">Hold</span>{% endif %}
+            </span>
+            {% endif %}
+            {% if app.interview_date %}
+            <span>Interview: {{ app.interview_date|date:"M j, Y H:i" }}</span>
+            {% endif %}
+            {% if app.offer_amount %}
+            <span>Offer: {{ app.offer_amount|floatformat:0 }}</span>
+            {% endif %}
+        </div>
     </div>
     {% endfor %}
 </div>
 {% else %}
-<p class="muted">No applications yet.</p>
+<div class="card" style="text-align:center;padding:1.5rem;">
+    <p class="muted">No applications yet.</p>
+    <a href="{% url 'application_create' %}?candidate={{ candidate.pk }}" class="btn btn-secondary" style="margin-top:0.5rem;">Create application →</a>
+</div>
 {% endif %}
-<p><a href="{% url 'candidate_list' %}">← Back to candidates</a></p>
+
+<h2 style="font-size:1.1rem;margin-top:1.5rem;">Open jobs this candidate has not applied for</h2>
+{% if suggested_jobs %}
+<div class="card">
+    <ul style="margin:0;padding:0;list-style:none;">
+        {% for job in suggested_jobs %}
+        <li style="padding:0.4rem 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <span>
+                <a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a>
+                <span class="muted"> · {{ job.department|default:"No department" }}</span>
+                {% if job.location %}<span class="muted">, {{ job.location }}</span>{% endif %}
+            </span>
+            <a href="{% url 'application_create' %}?job={{ job.pk }}&candidate={{ candidate.pk }}" class="btn btn-secondary" style="font-size:0.82rem;padding:0.3rem 0.7rem;">+ Apply</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<p class="muted">No other open jobs available.</p>
+{% endif %}
+<p style="margin-top:1rem;"><a href="{% url 'candidate_list' %}">← Back to candidates</a></p>
 {% endblock %}

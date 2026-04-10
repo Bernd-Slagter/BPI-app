@@ -11,12 +11,16 @@ VALID_APPLICATION_STATUSES = {
 class JobForm(forms.ModelForm):
     class Meta:
         model = Job
-        fields = ['title', 'department', 'location', 'description', 'status']
+        fields = ['title', 'department', 'location', 'employment_type', 'salary_min', 'salary_max', 'deadline', 'description', 'status']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'input', 'placeholder': 'e.g. Senior Backend Engineer'}),
             'department': forms.TextInput(attrs={'class': 'input', 'placeholder': 'e.g. Engineering'}),
             'location': forms.TextInput(attrs={'class': 'input', 'placeholder': 'e.g. Remote or New York, NY'}),
-            'description': forms.Textarea(attrs={'class': 'input', 'rows': 4, 'placeholder': 'Role requirements and responsibilities'}),
+            'employment_type': forms.Select(attrs={'class': 'input'}),
+            'salary_min': forms.NumberInput(attrs={'class': 'input', 'placeholder': 'e.g. 60000', 'min': '0'}),
+            'salary_max': forms.NumberInput(attrs={'class': 'input', 'placeholder': 'e.g. 90000', 'min': '0'}),
+            'deadline': forms.DateInput(attrs={'class': 'input', 'type': 'date'}),
+            'description': forms.Textarea(attrs={'class': 'input', 'rows': 6, 'placeholder': 'Role requirements and responsibilities'}),
             'status': forms.Select(attrs={'class': 'input'}),
         }
 
@@ -24,17 +28,30 @@ class JobForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.fields.get('title'):
             self.fields['title'].required = True
+        # Add empty label for optional select
+        self.fields['employment_type'].empty_label = None
+        self.fields['employment_type'].choices = [('', '— Select type —')] + list(Job.employment_type_choices)
+
+    def clean(self):
+        cleaned = super().clean()
+        salary_min = cleaned.get('salary_min')
+        salary_max = cleaned.get('salary_max')
+        if salary_min is not None and salary_max is not None and salary_min > salary_max:
+            raise ValidationError('Minimum salary cannot exceed maximum salary.')
+        return cleaned
 
 
 class CandidateForm(forms.ModelForm):
     class Meta:
         model = Candidate
-        fields = ['first_name', 'last_name', 'email', 'phone', 'resume_summary']
+        fields = ['first_name', 'last_name', 'email', 'phone', 'linkedin_url', 'source', 'resume_summary', 'resume_file']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'input'}),
             'last_name': forms.TextInput(attrs={'class': 'input'}),
             'email': forms.EmailInput(attrs={'class': 'input'}),
             'phone': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Optional'}),
+            'linkedin_url': forms.URLInput(attrs={'class': 'input', 'placeholder': 'https://linkedin.com/in/username'}),
+            'source': forms.Select(attrs={'class': 'input'}),
             'resume_summary': forms.Textarea(attrs={'class': 'input', 'rows': 4, 'placeholder': 'Brief summary or paste resume highlights'}),
         }
 
@@ -59,7 +76,7 @@ class CandidateForm(forms.ModelForm):
 class ApplicationForm(forms.ModelForm):
     class Meta:
         model = Application
-        fields = ['job', 'candidate', 'status', 'notes']
+        fields = ['job', 'candidate', 'status', 'notes', 'attachment', 'contract_file']
         widgets = {
             'job': forms.Select(attrs={'class': 'input'}),
             'candidate': forms.Select(attrs={'class': 'input'}),
@@ -81,11 +98,13 @@ class ApplicationForm(forms.ModelForm):
 
 
 class ApplicationEditForm(forms.ModelForm):
-    """Edit status and notes only (job/candidate fixed)."""
+    """Edit status, notes, files, and stage-specific fields."""
     class Meta:
         model = Application
-        fields = ['status', 'notes']
+        fields = ['status', 'notes', 'interview_date', 'offer_amount', 'attachment', 'contract_file']
         widgets = {
             'status': forms.Select(attrs={'class': 'input'}),
             'notes': forms.Textarea(attrs={'class': 'input', 'rows': 3}),
+            'interview_date': forms.DateTimeInput(attrs={'class': 'input', 'type': 'datetime-local'}),
+            'offer_amount': forms.NumberInput(attrs={'class': 'input', 'placeholder': 'e.g. 75000', 'min': '0', 'step': '0.01'}),
         }

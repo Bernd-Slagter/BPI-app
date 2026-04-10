@@ -1,1 +1,35 @@
-/.venv
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+*.sqlite3
+db.sqlite3
+/staticfiles/
+/media/
+server.log
+
+# Environment / secrets
+.env
+*.env
+
+# Docker leftovers
+=*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.tmp
+*.bak

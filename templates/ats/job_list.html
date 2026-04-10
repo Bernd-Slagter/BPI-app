@@ -1,19 +1,31 @@
 {% extends 'base.html' %}
 {% block title %}Jobs{% endblock %}
 {% block content %}
-<h1>Jobs</h1>
-<p class="actions"><a href="{% url 'job_create' %}" class="btn">Add job</a></p>
-<p class="muted">
-    Filter: <a href="?status=open" {% if status_filter == 'open' %}style="font-weight:bold"{% endif %}>Open</a> |
-    <a href="?status=on_hold" {% if status_filter == 'on_hold' %}style="font-weight:bold"{% endif %}>On Hold</a> |
-    <a href="?status=filled" {% if status_filter == 'filled' %}style="font-weight:bold"{% endif %}>Filled</a> |
-    <a href="?status=cancelled" {% if status_filter == 'cancelled' %}style="font-weight:bold"{% endif %}>Cancelled</a>
-</p>
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+    <h1 style="margin:0;">Jobs</h1>
+    <a href="{% url 'job_create' %}" class="btn">+ Add job</a>
+</div>
+<div class="filter-pills">
+    <span>Filter:</span>
+    <a href="?status=open" class="pill {% if status_filter == 'open' %}active{% endif %}">Open</a>
+    <a href="?status=on_hold" class="pill {% if status_filter == 'on_hold' %}active{% endif %}">On Hold</a>
+    <a href="?status=filled" class="pill {% if status_filter == 'filled' %}active{% endif %}">Filled</a>
+    <a href="?status=cancelled" class="pill {% if status_filter == 'cancelled' %}active{% endif %}">Cancelled</a>
+</div>
 {% if jobs %}
 <div class="card table-wrap">
     <table>
         <thead>
-            <tr><th scope="col">Title</th><th scope="col">Department</th><th scope="col">Location</th><th scope="col">Status</th></tr>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Department</th>
+                <th scope="col">Location</th>
+                <th scope="col">Type</th>
+                <th scope="col">Salary</th>
+                <th scope="col">Deadline</th>
+                <th scope="col">Applicants</th>
+                <th scope="col">Status</th>
+            </tr>
         </thead>
         <tbody>
             {% for job in jobs %}
@@ -21,6 +33,20 @@
                 <td><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a></td>
                 <td>{{ job.department|default:"—" }}</td>
                 <td>{{ job.location|default:"—" }}</td>
+                <td class="muted">{{ job.get_employment_type_display|default:"—" }}</td>
+                <td class="muted">
+                    {% if job.salary_min and job.salary_max %}
+                        {{ job.salary_min|floatformat:0 }}–{{ job.salary_max|floatformat:0 }}
+                    {% elif job.salary_min %}
+                        {{ job.salary_min|floatformat:0 }}+
+                    {% else %}—{% endif %}
+                </td>
+                <td class="muted">
+                    {% if job.deadline %}
+                        {{ job.deadline|date:"M j, Y" }}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ job.app_count }}</td>
                 <td>{{ job.get_status_display }}</td>
             </tr>
             {% endfor %}
@@ -28,6 +54,9 @@
     </table>
 </div>
 {% else %}
-<p class="muted">No jobs with this status. <a href="{% url 'job_create' %}">Add a job</a>.</p>
+<div class="card" style="text-align:center;padding:2rem;">
+    <p class="muted">No jobs with status "{{ status_filter }}".</p>
+    <a href="{% url 'job_create' %}" class="btn" style="margin-top:0.5rem;">Post a job →</a>
+</div>
 {% endif %}
 {% endblock %}

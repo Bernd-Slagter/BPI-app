@@ -3,19 +3,22 @@
 {% block content %}
 <nav class="breadcrumb"><a href="{% url 'application_list' %}">Applications</a><span>›</span>Add application</nav>
 <h1>{{ title }}</h1>
+<div class="notice notice-info">After saving, AI will automatically score the candidate-job match and provide a screening recommendation.</div>
 <div class="card">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% if form.non_field_errors %}<ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
         {% for field in form %}
         <div class="form-row {% if field.field.required %}required{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
+            {% if field.name == 'notes' %}<p class="field-hint">Optional context for the AI screener, e.g. how the candidate was sourced or any specific concerns.</p>{% endif %}
+            {% if field.name == 'attachment' %}<p class="field-hint">PDF, Word, or image. Any supporting document for this application.</p>{% endif %}
             {{ field.errors }}
         </div>
         {% endfor %}
         <div class="actions">
-            <button type="submit" class="btn">Save</button>
+            <button type="submit" class="btn" data-loading="Saving and running AI...">Save</button>
             <a href="{% url 'application_list' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>

@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/data
+      - media_data:/app/media
+    environment:
+      DJANGO_SECRET_KEY: "change-me-in-production"
+      DJANGO_DEBUG: "False"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      # Set a strong password here — this account is created on first run
+      DJANGO_SUPERUSER_USERNAME: "admin"
+      DJANGO_SUPERUSER_PASSWORD: "changeme123"
+      DJANGO_SUPERUSER_EMAIL: "admin@example.com"
+      # Paste your Anthropic API key here
+      ANTHROPIC_API_KEY: ""
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  media_data:

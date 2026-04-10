@@ -3,14 +3,37 @@
 {% block content %}
 {% if job %}<nav class="breadcrumb"><a href="{% url 'job_list' %}">Jobs</a><span>›</span><a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a><span>›</span>Edit</nav>{% else %}<nav class="breadcrumb"><a href="{% url 'job_list' %}">Jobs</a><span>›</span>Add job</nav>{% endif %}
 <h1>{{ title }}</h1>
+{% if not job %}
+<div class="card" style="margin-bottom:1rem;">
+    <p style="margin:0 0 0.75rem;font-size:0.9rem;"><strong>Import from document</strong> <span class="ai-badge">Claude</span></p>
+    <p class="muted" style="font-size:0.85rem;margin:0 0 0.75rem;">Upload a job description, vacancy notice, or any document — AI will extract the title, department, location, and description.</p>
+    <form method="post" action="{% url 'job_parse_file' %}" enctype="multipart/form-data" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="file" name="job_file" accept=".pdf,.txt,.msg,.eml,.docx,.doc,.rtf,.md" style="color:var(--text);font:inherit;font-size:0.9rem;" required>
+        <button type="submit" class="btn btn-secondary btn-ai" data-loading="Parsing document...">✦ Parse with AI</button>
+    </form>
+    <p class="field-hint" style="margin-top:0.4rem;">Supported: PDF, Word (.docx), Outlook email (.msg), email (.eml), plain text. The file is not stored — only read to populate the form.</p>
+</div>
+{% endif %}
 <div class="card">
-    <form method="post">
+    <form method="post" action="{% if job %}{% url 'job_edit' job.pk %}{% else %}{% url 'job_create' %}{% endif %}" id="job-form">
         {% csrf_token %}
         {% if form.non_field_errors %}<ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
+
         {% for field in form %}
         <div class="form-row {% if field.field.required %}required{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == 'salary_min' or field.name == 'salary_max' %}
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                {{ field }}
+                {% if field.name == 'salary_min' %}<span class="muted">to</span>{% endif %}
+            </div>
+            {% else %}
             {{ field }}
+            {% endif %}
+            {% if field.name == 'description' %}<p class="field-hint">Leave blank and click "Enhance with AI" below to auto-generate from the title and department.</p>{% endif %}
+            {% if field.name == 'salary_min' %}<p class="field-hint">Annual salary range (optional). Leave both blank if not disclosed.</p>{% endif %}
+            {% if field.name == 'deadline' %}<p class="field-hint">Application deadline — candidates will see this date.</p>{% endif %}
             {{ field.errors }}
         </div>
         {% endfor %}
@@ -19,5 +42,36 @@
             <a href="{% if job %}{% url 'job_detail' job.pk %}{% else %}{% url 'job_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
+    <div style="border-top:1px solid var(--border);margin-top:1.25rem;padding-top:1rem;">
+        <p class="muted" style="font-size:0.85rem;margin:0 0 0.5rem;">AI will write a professional description based on the title and department. You can review and edit before saving.</p>
+        {% if job %}
+        <form method="post" action="{% url 'job_enhance' job.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-ai" data-loading="Enhancing description...">✦ Enhance description with AI</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'job_enhance_preview' %}" id="enhance-form">
+            {% csrf_token %}
+            <input type="hidden" name="title" id="enhance-title">
+            <input type="hidden" name="department" id="enhance-department">
+            <input type="hidden" name="location" id="enhance-location">
+            <input type="hidden" name="description" id="enhance-description">
+            <input type="hidden" name="status" id="enhance-status">
+            <button type="submit" class="btn btn-secondary btn-ai" data-loading="Enhancing description..." id="enhance-btn">✦ Enhance description with AI</button>
+        </form>
+        <script>
+        document.getElementById('enhance-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            var f = document.getElementById('job-form');
+            document.getElementById('enhance-title').value       = f.querySelector('[name=title]').value;
+            document.getElementById('enhance-department').value  = f.querySelector('[name=department]').value;
+            document.getElementById('enhance-location').value    = f.querySelector('[name=location]').value;
+            document.getElementById('enhance-description').value = f.querySelector('[name=description]').value;
+            document.getElementById('enhance-status').value      = f.querySelector('[name=status]').value;
+            document.getElementById('enhance-form').submit();
+        });
+        </script>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

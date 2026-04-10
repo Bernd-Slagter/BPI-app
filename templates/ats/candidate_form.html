@@ -4,20 +4,33 @@
 {% if candidate %}<nav class="breadcrumb"><a href="{% url 'candidate_list' %}">Candidates</a><span>›</span><a href="{% url 'candidate_detail' candidate.pk %}">{{ candidate }}</a><span>›</span>Edit</nav>{% else %}<nav class="breadcrumb"><a href="{% url 'candidate_list' %}">Candidates</a><span>›</span>Add candidate</nav>{% endif %}
 <h1>{{ title }}</h1>
 <div class="card">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% if form.non_field_errors %}<ul class="errorlist">{% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}</ul>{% endif %}
         {% for field in form %}
         <div class="form-row {% if field.field.required %}required{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
+            {% if field.name == 'linkedin_url' %}<p class="field-hint">Optional — used for reference and outreach.</p>{% endif %}
+            {% if field.name == 'source' %}<p class="field-hint">How this candidate was found or referred.</p>{% endif %}
+            {% if field.name == 'resume_file' %}<p class="field-hint">PDF, Word (.docx), or plain text. AI will automatically extract a summary when you save.</p>{% endif %}
+            {% if field.name == 'resume_summary' %}<p class="field-hint">Auto-filled when a resume file is uploaded. You can also type or paste directly.</p>{% endif %}
             {{ field.errors }}
         </div>
         {% endfor %}
         <div class="actions">
-            <button type="submit" class="btn">Save</button>
+            <button type="submit" class="btn" data-loading="Saving...">Save</button>
             <a href="{% if candidate %}{% url 'candidate_detail' candidate.pk %}{% else %}{% url 'candidate_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
+    {% if candidate and candidate.resume_file %}
+    <div style="border-top:1px solid var(--border);margin-top:1.25rem;padding-top:1rem;">
+        <p class="muted" style="font-size:0.85rem;margin:0 0 0.5rem;">Re-read the uploaded resume and regenerate the summary using AI.</p>
+        <form method="post" action="{% url 'candidate_parse_resume' candidate.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary btn-ai" style="font-size:0.85rem;" data-loading="Parsing resume...">✦ Re-parse resume with AI</button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

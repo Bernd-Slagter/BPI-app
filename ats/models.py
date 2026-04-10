@@ -14,6 +14,16 @@ class Job(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     status = models.CharField(max_length=20, choices=status_choices, default='open')
+    employment_type_choices = [
+        ('full_time', 'Full-time'),
+        ('part_time', 'Part-time'),
+        ('contract', 'Contract'),
+        ('internship', 'Internship'),
+    ]
+    employment_type = models.CharField(max_length=20, choices=employment_type_choices, blank=True)
+    salary_min = models.IntegerField(null=True, blank=True)
+    salary_max = models.IntegerField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank=True, help_text='Application deadline')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -30,7 +40,19 @@ class Candidate(models.Model):
     last_name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=30, blank=True)
+    linkedin_url = models.URLField(blank=True)
+    source_choices = [
+        ('', 'Unknown'),
+        ('direct', 'Direct application'),
+        ('linkedin', 'LinkedIn'),
+        ('referral', 'Referral'),
+        ('job_board', 'Job board'),
+        ('agency', 'Recruitment agency'),
+        ('other', 'Other'),
+    ]
+    source = models.CharField(max_length=20, blank=True, choices=source_choices)
     resume_summary = models.TextField(blank=True)
+    resume_file = models.FileField(upload_to='resumes/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -56,6 +78,14 @@ class Application(models.Model):
     ]
     status = models.CharField(max_length=20, choices=status_choices, default='submitted')
     notes = models.TextField(blank=True)
+    attachment = models.FileField(upload_to='attachments/', blank=True, null=True)
+    contract_file = models.FileField(upload_to='contracts/', blank=True, null=True)
+    interview_date = models.DateTimeField(null=True, blank=True)
+    offer_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    ai_match_score = models.IntegerField(null=True, blank=True)
+    ai_match_rationale = models.TextField(blank=True)
+    ai_screening_notes = models.TextField(blank=True)
+    ai_interview_questions = models.TextField(blank=True)
     applied_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

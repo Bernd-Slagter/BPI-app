@@ -1,59 +1,66 @@
-# Application Tracking System (ATS)
+# ATS — AI-Powered Applicant Tracking System
 
-A basic Django application for tracking job positions, candidates, and applications.
+A Django-based Applicant Tracking System built for a BPI academic assignment. The system replaces manual recruiter steps with AI (Claude) at every stage of the hiring pipeline.
 
 ## Features
 
-- **Jobs** – Create and manage open positions (title, department, location, status: Open / On Hold / Filled / Cancelled).
-- **Candidates** – Store candidate info (name, email, phone, resume summary).
-- **Applications** – Link candidates to jobs with status (Submitted, Screening, Interview, Offer, Hired, Rejected, Withdrawn).
+- **Job management** — post positions with employment type, salary range, and deadline; AI-enhance descriptions; parse job files (PDF, Word, Outlook email)
+- **Candidate management** — track candidates with source, LinkedIn, and resume; AI auto-parses uploaded resumes
+- **Application pipeline** — Submitted → Screening → Interview → Offer → Hired with stage-specific fields (interview date, offer amount)
+- **AI screening** — automatic match scoring (0–100) and Advance/Hold/Reject recommendation on every application
+- **AI interview guide** — generates tailored interview questions when an application reaches the Interview stage
+- **AI matching** — rank all candidates against a job, or all open jobs against a candidate
+- **Login required** — all pages protected; Django admin at `/admin/`
 
-## Setup
+## Tech stack
 
-1. Create and activate a virtual environment:
+- Python 3.12, Django 5.x
+- Anthropic Claude API (`claude-haiku` for fast scoring, `claude-sonnet` for rich generation)
+- SQLite (dev) / volume-mounted SQLite (Docker)
+- Gunicorn + Docker for deployment
+- Tailscale-friendly (binds to any interface)
 
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate   # Windows
-   # source .venv/bin/activate   # macOS/Linux
-   ```
+## Quick start (local)
 
-2. Install dependencies:
+```bash
+# 1. Create and activate a virtual environment
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS/Linux
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+# 2. Install dependencies
+pip install -r requirements.txt
 
-3. Run migrations:
+# 3. Create .env with your API key
+echo ANTHROPIC_API_KEY=sk-ant-... > .env
 
-   ```bash
-   python manage.py migrate
-   ```
+# 4. Run migrations and create an admin account
+python manage.py migrate
+python manage.py createsuperuser
 
-4. Create a superuser (optional, for admin access):
+# 5. Start the dev server
+python manage.py runserver
+```
 
-   ```bash
-   python manage.py createsuperuser
-   ```
+Open http://localhost:8000
 
-5. Start the development server:
+## Docker
 
-   ```bash
-   python manage.py runserver
-   ```
+```bash
+# Edit docker-compose.yml — set DJANGO_SUPERUSER_PASSWORD and ANTHROPIC_API_KEY
+docker compose up --build
+```
 
-6. Open **http://127.0.0.1:8000/** for the dashboard, or **http://127.0.0.1:8000/admin/** to manage data.
+The database and uploaded files are stored in named Docker volumes and survive rebuilds.
 
-## Project structure
+## Environment variables
 
-- `config/` – Django project settings and root URLs.
-- `ats/` – ATS app: models (Job, Candidate, Application), views, URLs, admin.
-- `templates/` – Base template and ATS pages (dashboard, job list/detail, candidates, applications).
-
-## Usage
-
-- **Dashboard** – Overview with open jobs, recent applications, and counts.
-- **Jobs** – List jobs by status; open a job to see its applications.
-- **Candidates** – List all candidates and application counts.
-- **Applications** – List all applications with optional status filter.
-- **Admin** – Add/edit Jobs, Candidates, and Applications (and change application status).
+| Variable | Description | Default |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Anthropic API key | *(none — AI features disabled)* |
+| `DJANGO_SECRET_KEY` | Django secret key | dev key |
+| `DJANGO_DEBUG` | Enable debug mode | `True` |
+| `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
+| `DATABASE_PATH` | Path to SQLite file | `db.sqlite3` next to `manage.py` |
+| `DJANGO_SUPERUSER_USERNAME` | Auto-created admin username (Docker) | — |
+| `DJANGO_SUPERUSER_PASSWORD` | Auto-created admin password (Docker) | — |
